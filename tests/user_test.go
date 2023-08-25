@@ -49,7 +49,7 @@ func Init() {
 	userClient = proto.NewUserClient(conn)
 }
 
-func Test(t *testing.T) {
+func TestUser(t *testing.T) {
 	Init()
 	GetUserList()
 	conn.Close()
