@@ -38,25 +38,7 @@ func Paginate(page, pageSize int) func(db *gorm.DB) *gorm.DB {
 	}
 }
 
-func ModelToResponse(user model.User) proto.UserInfoResponse {
-	// 在gRPC的message中字端有默认值，不能随便赋值nil进去，容易出错
-	resp := proto.UserInfoResponse{
-		Id:       user.ID,
-		Password: user.Password,
-		Nickname: user.NickName,
-		Mobile:   user.Mobile,
-		Gender:   user.Gender,
-		Role:     int32(user.Role),
-	}
-
-	if user.Birthday != nil {
-		resp.Birthday = uint64(user.Birthday.Unix())
-	}
-
-	return resp
-}
-
-// 用户列表
+// GetUserList 用户列表
 func (s *UserServer) GetUserList(ctx context.Context, req *proto.PageInfo) (*proto.UserListResponse, error) {
 	var users []model.User
 	result := global.DB.Find(&users)
@@ -71,14 +53,24 @@ func (s *UserServer) GetUserList(ctx context.Context, req *proto.PageInfo) (*pro
 	global.DB.Scopes(Paginate(int(req.Page), int(req.Size))).Find(&users)
 
 	for _, user := range users {
-		userInfoResp := ModelToResponse(user)
+		userInfoResp := proto.UserInfoResponse{
+			Id:       user.ID,
+			Password: user.Password,
+			Nickname: user.NickName,
+			Mobile:   user.Mobile,
+			Gender:   user.Gender,
+			Role:     int32(user.Role),
+		}
+		if user.Birthday != nil {
+			userInfoResp.Birthday = uint64(user.Birthday.Unix())
+		}
 		rsp.Data = append(rsp.Data, &userInfoResp)
 	}
 
 	return rsp, nil
 }
 
-// 通过手机号码查询用户
+// GetUserByMobile 通过手机号码查询用户
 func (s *UserServer) GetUserByMobile(ctx context.Context, req *proto.MobileRequest) (*proto.UserInfoResponse, error) {
 	var user model.User
 	result := global.DB.Where("mobile = ?", req.Mobile).First(&user)
@@ -91,12 +83,22 @@ func (s *UserServer) GetUserByMobile(ctx context.Context, req *proto.MobileReque
 		return nil, result.Error
 	}
 
-	userInfoResp := ModelToResponse(user)
+	userInfoResp := proto.UserInfoResponse{
+		Id:       user.ID,
+		Password: user.Password,
+		Nickname: user.NickName,
+		Mobile:   user.Mobile,
+		Gender:   user.Gender,
+		Role:     int32(user.Role),
+	}
+	if user.Birthday != nil {
+		userInfoResp.Birthday = uint64(user.Birthday.Unix())
+	}
 
 	return &userInfoResp, nil
 }
 
-// 通过Id查询用户
+// GetUserById 通过Id查询用户
 func (s *UserServer) GetUserById(ctx context.Context, req *proto.IdRequest) (*proto.UserInfoResponse, error) {
 	var user model.User
 	result := global.DB.Where("id = ?", req.Id).First(&user)
@@ -109,12 +111,22 @@ func (s *UserServer) GetUserById(ctx context.Context, req *proto.IdRequest) (*pr
 		return nil, result.Error
 	}
 
-	userInfoResp := ModelToResponse(user)
+	userInfoResp := proto.UserInfoResponse{
+		Id:       user.ID,
+		Password: user.Password,
+		Nickname: user.NickName,
+		Mobile:   user.Mobile,
+		Gender:   user.Gender,
+		Role:     int32(user.Role),
+	}
+	if user.Birthday != nil {
+		userInfoResp.Birthday = uint64(user.Birthday.Unix())
+	}
 
 	return &userInfoResp, nil
 }
 
-// 新建用户
+// CreateUser 新建用户
 func (s *UserServer) CreateUser(ctx context.Context, req *proto.CreateUserRequest) (*proto.UserInfoResponse, error) {
 	var user model.User
 	result := global.DB.Where("mobile = ?", req.Mobile).First(&user)
@@ -136,12 +148,22 @@ func (s *UserServer) CreateUser(ctx context.Context, req *proto.CreateUserReques
 		return nil, status.Errorf(codes.Internal, result.Error.Error())
 	}
 
-	userInfoResp := ModelToResponse(user)
+	userInfoResp := proto.UserInfoResponse{
+		Id:       user.ID,
+		Password: user.Password,
+		Nickname: user.NickName,
+		Mobile:   user.Mobile,
+		Gender:   user.Gender,
+		Role:     int32(user.Role),
+	}
+	if user.Birthday != nil {
+		userInfoResp.Birthday = uint64(user.Birthday.Unix())
+	}
 
 	return &userInfoResp, nil
 }
 
-// 更新用户
+// UpdateUser 更新用户
 func (s *UserServer) UpdateUser(ctx context.Context, req *proto.UpdateUserInfoRequest) (*empty.Empty, error) {
 	var user model.User
 	result := global.DB.Where("id = ?", req.Id).First(&user)
@@ -163,7 +185,7 @@ func (s *UserServer) UpdateUser(ctx context.Context, req *proto.UpdateUserInfoRe
 	return &empty.Empty{}, nil
 }
 
-// 检查密码
+// CheckPassword 检查密码
 func (s *UserServer) CheckPassword(ctx context.Context, req *proto.CheckPasswordRequest) (*proto.CheckResponse, error) {
 	// 校验密码
 	encryptedPassword := tool.Encrypt(tool.KEY, req.Password)
